@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 
 type ShoppingList = {
   id: string;
@@ -20,7 +21,7 @@ export default function ListsPage() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
   const [newListName, setNewListName] = useState('');
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const getSessionAndLists = async () => {
@@ -66,7 +67,6 @@ export default function ListsPage() {
     return () => {
       listener.subscription.unsubscribe();
     };
-    // eslint-disable-next-line
   }, [router]);
 
   const handleAddList = async () => {

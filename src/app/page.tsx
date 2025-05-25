@@ -7,11 +7,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const getSession = async () => {

@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 
 type List = {
   id: string;
@@ -26,7 +27,7 @@ export default function SharePage() {
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [alreadyAdded, setAlreadyAdded] = useState(false);
 
   useEffect(() => {
@@ -65,7 +66,6 @@ export default function SharePage() {
       setLoading(false);
     };
     getSessionAndList();
-    // eslint-disable-next-line
   }, [shareId]);
 
   const handleAddToMyLists = async () => {
