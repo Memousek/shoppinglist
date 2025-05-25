@@ -91,7 +91,6 @@ export default function ListDetailPage() {
       setLoading(false);
     };
     getSessionAndList();
-    // eslint-disable-next-line
   }, [id, router]);
 
   // Realtime listener na položky a seznam
