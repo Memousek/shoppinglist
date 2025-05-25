@@ -5,11 +5,11 @@
  */
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
+import type { Session } from '@supabase/supabase-js';
 
 type Item = {
   id: string;
@@ -29,18 +29,28 @@ type List = {
   updated_by_email: string;
 };
 
+type Share = {
+  id: string;
+  list_id: string;
+  share_token: string | null;
+  accepted_by: string | null;
+  accepted_email: string | null;
+  accepted_at: string | null;
+  role: 'owner' | 'editor' | 'viewer';
+};
+
 export default function ListDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [shares, setShares] = useState<any[]>([]);
+  const [shares, setShares] = useState<Share[]>([]);
   const [loading, setLoading] = useState(true);
   const [newItem, setNewItem] = useState('');
   const [newNote, setNewNote] = useState('');
   const [listNote, setListNote] = useState('');
   const [editingNote, setEditingNote] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -51,7 +61,7 @@ export default function ListDetailPage() {
   useEffect(() => {
     const getSessionAndList = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
-      setSession(sessionData.session);
+      setSession(sessionData.session as Session | null);
       if (!sessionData.session) {
         router.push('/');
         return;
@@ -77,7 +87,7 @@ export default function ListDetailPage() {
         .from('shopping_list_shares')
         .select('*')
         .eq('list_id', id);
-      setShares(sharesData || []);
+      setShares((sharesData as Share[]) || []);
       setLoading(false);
     };
     getSessionAndList();
@@ -91,7 +101,6 @@ export default function ListDetailPage() {
     const itemsSub = supabase
       .channel('items-list-' + id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_list_items', filter: `list_id=eq.${id}` }, payload => {
-        // Znovu načti položky
         supabase
           .from('shopping_list_items')
           .select('*')
@@ -99,7 +108,8 @@ export default function ListDetailPage() {
           .order('created_at', { ascending: true })
           .then(({ data }) => setItems(data || []));
         // Pokud změnu provedl někdo jiný, zobraz toast
-        if (payload.new && (payload.new as any).added_by_email && (payload.new as any).added_by_email !== session.user.email) {
+        const newItem = payload.new as { added_by_email?: string };
+        if (newItem && newItem.added_by_email && newItem.added_by_email !== session.user.email) {
           toast('Seznam byl aktualizován jiným uživatelem', { icon: '🔄' });
         }
       })
@@ -115,7 +125,8 @@ export default function ListDetailPage() {
           .maybeSingle()
           .then(({ data }) => setList(data));
         // Pokud změnu provedl někdo jiný, zobraz toast
-        if (payload.new && (payload.new as any).updated_by_email && (payload.new as any).updated_by_email !== session.user.email) {
+        const newList = payload.new as { updated_by_email?: string };
+        if (newList && newList.updated_by_email && newList.updated_by_email !== session.user.email) {
           toast('Seznam byl upraven jiným uživatelem', { icon: '🔄' });
         }
       })
@@ -401,7 +412,7 @@ export default function ListDetailPage() {
                 className="flex items-center justify-between bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 shadow-sm hover:border-blue-500 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
-                  <span className="truncate font-mono text-sm text-blue-300" title={s.accepted_email}>{s.accepted_email}</span>
+                  <span className="truncate font-mono text-sm text-blue-300" title={s.accepted_email || undefined}>{s.accepted_email}</span>
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ml-0 sm:ml-2 ${s.role === 'editor' ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}
                     aria-label={`Role: ${s.role}`}
                   >
