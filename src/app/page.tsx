@@ -12,12 +12,10 @@ import type { Session } from '@supabase/supabase-js';
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      setSession(data.session);
       setLoading(false);
       if (data.session) {
         router.push('/lists');
@@ -26,7 +24,6 @@ export default function HomePage() {
     getSession();
     // Listen for changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
       if (session) router.push('/lists');
     });
     return () => {
