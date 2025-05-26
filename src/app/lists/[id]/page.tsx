@@ -68,7 +68,6 @@ export default function ListDetailPage() {
   useEffect(() => {
     if (!mainRef.current) return;
     if ('startViewTransition' in document) {
-      // @ts-ignore
       document.startViewTransition(() => {});
     }
   }, [id]);

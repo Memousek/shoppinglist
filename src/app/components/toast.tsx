@@ -3,7 +3,6 @@
  * Barevné, s ikonami, přístupné. Používá react-hot-toast.
  */
 import toast, { Toaster } from 'react-hot-toast';
-import { ReactNode } from 'react';
 
 export function showSuccess(message: string) {
   toast.success(message, {

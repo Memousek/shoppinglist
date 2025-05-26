@@ -22,37 +22,37 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const emailInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState(s => ({ ...s, [e.target.name]: e.target.value, error: '', info: '' }));
+    setState({ ...state, [e.target.name]: e.target.value, error: '', info: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setState(s => ({ ...s, error: '', info: '', loading: true }));
+    setState({ ...state, error: '', info: '', loading: true });
     if (!state.email) {
-      setState(s => ({ ...s, error: 'Vyplňte email.', loading: false }));
+      setState({ ...state, error: 'Vyplňte email.', loading: false });
       return;
     }
     if (mode !== 'reset' && !state.password) {
-      setState(s => ({ ...s, error: 'Vyplňte heslo.', loading: false }));
+      setState({ ...state, error: 'Vyplňte heslo.', loading: false });
       return;
     }
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email: state.email, password: state.password });
-      if (error) setState(s => ({ ...s, error: error.message, loading: false }));
+      if (error) setState({ ...state, error: error.message, loading: false });
       else {
         setState(initialState);
         onClose();
       }
     } else if (mode === 'register') {
       const { error } = await supabase.auth.signUp({ email: state.email, password: state.password });
-      if (error) setState(s => ({ ...s, error: error.message, loading: false }));
-      else setState(s => ({ ...initialState, info: 'Registrace úspěšná! Zkontrolujte email pro potvrzení.' }));
+      if (error) setState({ ...state, error: error.message, loading: false });
+      else setState({ ...initialState, info: 'Registrace úspěšná! Zkontrolujte email pro potvrzení.' });
     } else if (mode === 'reset') {
       const { error } = await supabase.auth.resetPasswordForEmail(state.email);
-      if (error) setState(s => ({ ...s, error: error.message, loading: false }));
-      else setState(s => ({ ...initialState, info: 'Na email byl odeslán odkaz pro změnu hesla.' }));
+      if (error) setState({ ...state, error: error.message, loading: false });
+      else setState({ ...initialState, info: 'Na email byl odeslán odkaz pro změnu hesla.' });
     }
-    setState(s => ({ ...s, loading: false }));
+    setState({ ...state, loading: false });
   };
 
   const handleSwitch = (newMode: AuthModalMode) => {

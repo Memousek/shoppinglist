@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import SkeletonList from '../components/skeletonList';
-import { showSuccess, showError, showInfo } from '../components/toast';
+import { showSuccess, showError } from '../components/toast';
 
 type ShoppingList = {
   id: string;
