@@ -28,31 +28,50 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setState({ ...state, error: '', info: '', loading: true });
-    if (!state.email) {
-      setState({ ...state, error: 'Vyplňte email.', loading: false });
+
+    // Validace emailu (jednoduchý regex)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!state.email || !emailRegex.test(state.email)) {
+      setState({ ...state, error: 'Zadejte platný email.', loading: false });
       return;
     }
-    if (mode !== 'reset' && !state.password) {
-      setState({ ...state, error: 'Vyplňte heslo.', loading: false });
+    // Validace hesla (min. 6 znaků)
+    if (mode !== 'reset' && (!state.password || state.password.length < 6)) {
+      setState({ ...state, error: 'Heslo musí mít alespoň 6 znaků.', loading: false });
       return;
     }
+
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email: state.email, password: state.password });
-      if (error) setState({ ...state, error: error.message, loading: false });
-      else {
+      if (error) {
+        let errorMsg = error.message;
+        if (error.status === 400) errorMsg = 'Špatný email nebo heslo, nebo účet není potvrzen.';
+        setState({ ...state, error: errorMsg, loading: false });
+      } else {
         setState(initialState);
         onClose();
       }
     } else if (mode === 'register') {
       const { error } = await supabase.auth.signUp({ email: state.email, password: state.password });
-      if (error) setState({ ...state, error: error.message, loading: false });
-      else setState({ ...initialState, info: 'Registrace úspěšná! Zkontrolujte email pro potvrzení.' });
+      if (error) {
+        let errorMsg = error.message;
+        if (error.status === 429) errorMsg = 'Příliš mnoho pokusů o registraci. Zkuste to za pár minut znovu.';
+        if (error.status === 422) errorMsg = 'Registrace se nezdařila. Email už existuje, nebo nesplňuje požadavky.';
+        setState({ ...state, error: errorMsg, loading: false });
+      } else {
+        setState({ ...initialState, info: 'Registrace úspěšná! Zkontrolujte email pro potvrzení.' });
+      }
     } else if (mode === 'reset') {
       const { error } = await supabase.auth.resetPasswordForEmail(state.email);
-      if (error) setState({ ...state, error: error.message, loading: false });
-      else setState({ ...initialState, info: 'Na email byl odeslán odkaz pro změnu hesla.' });
+      if (error) {
+        let errorMsg = error.message;
+        if (error.status === 429) errorMsg = 'Příliš mnoho pokusů. Zkuste to za chvíli znovu.';
+        setState({ ...state, error: errorMsg, loading: false });
+      } else {
+        setState({ ...initialState, info: 'Na email byl odeslán odkaz pro změnu hesla.' });
+      }
     }
-    setState({ ...state, loading: false });
+    setState(s => ({ ...s, loading: false }));
   };
 
   const handleSwitch = (newMode: AuthModalMode) => {
