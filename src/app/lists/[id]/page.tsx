@@ -302,6 +302,17 @@ export default function ListDetailPage() {
     showInfo(t('list.userRemoved'));
   };
 
+  // Smazání celého seznamu (jen owner)
+  const handleDeleteList = async () => {
+    if (!window.confirm(t('list.deleteConfirm')) || !list) return;
+    await supabase
+      .from('shopping_lists')
+      .delete()
+      .eq('id', list.id);
+    showSuccess(t('list.deleted'));
+    router.push('/lists');
+  };
+
   if (loading) return (
     <main ref={mainRef} className="max-w-xl mx-auto py-8 px-4">
       <SkeletonListHeader />
@@ -390,6 +401,13 @@ export default function ListDetailPage() {
                 aria-label={t('list.share')}
               >
                 {t('list.share')}
+              </button>
+              <button
+                className="text-sm text-red-600 hover:underline ml-4"
+                onClick={handleDeleteList}
+                aria-label={t('list.deleteListAria')}
+              >
+                {t('list.deleteList')}
               </button>
             </div>
           )}

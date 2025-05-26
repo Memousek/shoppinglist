@@ -71,5 +71,9 @@
   "list.inviteError": "Failed to invite user: {error}",
   "list.notFound": "List not found.",
   "list.updatedByOther": "The list was updated by another user.",
-  "list.noteSaved": "Note has been saved."
+  "list.noteSaved": "Note has been saved.",
+  "list.deleteList": "Delete list",
+  "list.deleteListAria": "Delete this list",
+  "list.deleteConfirm": "Are you sure you want to delete this list? This action cannot be undone.",
+  "list.deleted": "The list has been deleted."
 } 

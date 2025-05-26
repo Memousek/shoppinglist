@@ -71,5 +71,9 @@
   "list.inviteError": "Nepodařilo se pozvat uživatele: {error}",
   "list.notFound": "Seznam nenalezen.",
   "list.updatedByOther": "Seznam byl aktualizován jiným uživatelem.",
-  "list.noteSaved": "Poznámka byla uložena."
+  "list.noteSaved": "Poznámka byla uložena.",
+  "list.deleteList": "Smazat seznam",
+  "list.deleteListAria": "Smazat tento seznam",
+  "list.deleteConfirm": "Opravdu chcete smazat tento seznam? Tato akce je nevratná.",
+  "list.deleted": "Seznam byl smazán."
 } 
