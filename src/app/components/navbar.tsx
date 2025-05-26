@@ -13,6 +13,7 @@ import { t } from '../i18n';
 interface User {
   email: string;
   displayName?: string;
+  role?: string;
 }
 
 // Překladové jazyky
@@ -23,6 +24,7 @@ const LANGUAGES = [
 
 function handleLanguageChange(lang: string) {
   localStorage.setItem('lang', lang);
+  document.cookie = `lang=${lang}; path=/; max-age=31536000`;
   window.location.reload();
 }
 
@@ -37,7 +39,8 @@ export default function Navbar() {
       const { data } = await supabase.auth.getSession();
       if (data.session) setUser({
         email: data.session.user.email ?? '',
-        displayName: data.session.user.user_metadata?.displayName || undefined
+        displayName: data.session.user.user_metadata?.displayName || undefined,
+        role: data.session.user.user_metadata?.role || undefined
       });
       else setUser(null);
     };
@@ -45,7 +48,8 @@ export default function Navbar() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) setUser({
         email: session.user.email ?? '',
-        displayName: session.user.user_metadata?.displayName || undefined
+        displayName: session.user.user_metadata?.displayName || undefined,
+        role: session.user.user_metadata?.role || undefined
       });
       else setUser(null);
     });
@@ -74,6 +78,15 @@ export default function Navbar() {
         >
           Shopping List
         </button>
+        {user.role === 'admin' && (
+          <button
+            className="ml-4 text-sm font-semibold text-red-400 hover:underline border border-red-400 rounded px-2 py-1"
+            onClick={() => router.push('/admin/dashboard')}
+            aria-label="Admin dashboard"
+          >
+            Admin
+          </button>
+        )}
       </div>
       <div className="relative" ref={menuRef}>
         <button

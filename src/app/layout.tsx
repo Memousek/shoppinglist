@@ -26,7 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="cs">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <head>
+        <meta name="description" content="Moderní aplikace pro správu a sdílení nákupních seznamů. Přehledně, bezpečně a zdarma." />
+        <link rel="preconnect" href="https://db.kpvhxnsqihyymtovcafr.supabase.co" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-zinc-100`}>
         <CustomToaster />
         <div className="min-h-12">
           <Navbar />

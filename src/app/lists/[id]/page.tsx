@@ -352,10 +352,10 @@ export default function ListDetailPage() {
           <div className="mb-2 text-xs text-gray-500" aria-live="polite">
             {t('list.role')} <span className="font-semibold">{myRole}</span>
           </div>
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
             {(myRole === 'editor' || myRole === 'owner') && (
               <input
-                className="border rounded px-2 py-1 flex-1"
+                className="border rounded px-2 py-1 w-full sm:w-auto flex-1 min-w-0"
                 placeholder={t('list.itemNamePlaceholder')}
                 value={newItem}
                 onChange={e => setNewItem(e.target.value)}
@@ -364,7 +364,7 @@ export default function ListDetailPage() {
             )}
             {(myRole === 'editor' || myRole === 'owner') && (
               <input
-                className="border rounded px-2 py-1 flex-1"
+                className="border rounded px-2 py-1 w-full sm:w-auto flex-1 min-w-0"
                 placeholder={t('list.itemNotePlaceholder')}
                 value={newNote}
                 onChange={e => setNewNote(e.target.value)}
@@ -373,7 +373,7 @@ export default function ListDetailPage() {
             )}
             {(myRole === 'editor' || myRole === 'owner') && (
               <button
-                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 focus:outline focus:ring"
+                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 focus:outline focus:ring w-full sm:w-auto"
                 onClick={handleAddItem}
                 aria-label={t('list.addItemAria')}
                 disabled={loading}
@@ -404,7 +404,7 @@ export default function ListDetailPage() {
           </li>
         ) : (
           items.map(item => (
-            <li key={item.id} className="flex items-center gap-2 border rounded px-3 py-2 transition-all duration-200 animate-fade-in" role="listitem">
+            <li key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 border rounded px-3 py-2 transition-all duration-200 animate-fade-in" role="listitem">
               <input
                 type="checkbox"
                 checked={item.checked}
@@ -431,29 +431,31 @@ export default function ListDetailPage() {
               ) : (
                 <>
                   <span className={item.checked ? 'line-through text-gray-400' : ''}>{item.name}</span>
-                  {item.note && <span className="text-xs text-gray-500 ml-2">({item.note})</span>}
+                  {item.note && <span className="text-xs text-gray-500 sm:ml-2">({item.note})</span>}
                   {item.added_by_email && (
-                    <span className="text-xs text-gray-400 ml-2">{t('list.addedBy')} {item.added_by_email}</span>
+                    <span className="text-xs text-gray-400 sm:ml-2">{t('list.addedBy')} {item.added_by_email}</span>
                   )}
-                  {(myRole === 'editor' || myRole === 'owner') && (
-                    <button
-                      className="text-xs text-blue-600 hover:underline ml-2"
-                      onClick={() => handleEditItem(item)}
-                      aria-label={t('list.editItemAria') + ' ' + item.name}
-                    >
-                      {t('list.editItem')}
-                    </button>
-                  )}
+                  <div className="flex gap-2 mt-1 sm:mt-0 sm:ml-2">
+                    {(myRole === 'editor' || myRole === 'owner') && (
+                      <button
+                        className="text-xs text-blue-600 hover:underline"
+                        onClick={() => handleEditItem(item)}
+                        aria-label={t('list.editItemAria') + ' ' + item.name}
+                      >
+                        {t('list.editItem')}
+                      </button>
+                    )}
+                    {(myRole === 'editor' || myRole === 'owner') && (
+                      <button
+                        className="text-xs text-red-600 hover:underline"
+                        onClick={() => handleDeleteItem(item.id)}
+                        aria-label={t('list.deleteItemAria') + ' ' + item.name}
+                      >
+                        {t('list.deleteItem')}
+                      </button>
+                    )}
+                  </div>
                 </>
-              )}
-              {(myRole === 'editor' || myRole === 'owner') && (
-                <button
-                  className="ml-auto text-xs text-red-600 hover:underline"
-                  onClick={() => handleDeleteItem(item.id)}
-                  aria-label={t('list.deleteItemAria') + ' ' + item.name}
-                >
-                  {t('list.deleteItem')}
-                </button>
               )}
             </li>
           ))
