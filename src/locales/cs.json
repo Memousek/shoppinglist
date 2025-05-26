@@ -69,5 +69,6 @@
   "list.roleChanged": "Role uživatele změněna",
   "list.inviteSent": "Pozvánka byla odeslána.",
   "list.inviteError": "Nepodařilo se pozvat uživatele: {error}",
-  "list.notFound": "Seznam nenalezen."
+  "list.notFound": "Seznam nenalezen.",
+  "list.updatedByOther": "Seznam byl aktualizován jiným uživatelem."
 } 

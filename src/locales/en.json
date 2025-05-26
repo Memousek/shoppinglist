@@ -69,5 +69,6 @@
   "list.roleChanged": "User role changed",
   "list.inviteSent": "Invitation sent.",
   "list.inviteError": "Failed to invite user: {error}",
-  "list.notFound": "List not found."
+  "list.notFound": "List not found.",
+  "list.updatedByOther": "The list was updated by another user."
 } 
