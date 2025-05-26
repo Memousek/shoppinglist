@@ -6,6 +6,7 @@
 
 import { useState, useRef } from 'react';
 import { supabase } from '@/supabaseClient';
+import { t } from '../i18n';
 
 export type AuthModalMode = 'login' | 'register' | 'reset';
 
@@ -14,7 +15,7 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
-const initialState = { email: '', password: '', error: '', loading: false, info: '' };
+const initialState = { email: '', password: '', displayName: '', error: '', loading: false, info: '' };
 
 export default function AuthModal({ open, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<AuthModalMode>('login');
@@ -32,12 +33,17 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     // Validace emailu (jednoduchý regex)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!state.email || !emailRegex.test(state.email)) {
-      setState({ ...state, error: 'Zadejte platný email.', loading: false });
+      setState({ ...state, error: t('auth.errorEmail'), loading: false });
       return;
     }
     // Validace hesla (min. 6 znaků)
     if (mode !== 'reset' && (!state.password || state.password.length < 6)) {
-      setState({ ...state, error: 'Heslo musí mít alespoň 6 znaků.', loading: false });
+      setState({ ...state, error: t('auth.errorPassword'), loading: false });
+      return;
+    }
+    // Validace jména při registraci
+    if (mode === 'register' && !state.displayName.trim()) {
+      setState({ ...state, error: t('auth.errorName'), loading: false });
       return;
     }
 
@@ -45,30 +51,36 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
       const { error } = await supabase.auth.signInWithPassword({ email: state.email, password: state.password });
       if (error) {
         let errorMsg = error.message;
-        if (error.status === 400) errorMsg = 'Špatný email nebo heslo, nebo účet není potvrzen.';
+        if (error.status === 400) errorMsg = t('auth.errorLogin');
         setState({ ...state, error: errorMsg, loading: false });
       } else {
         setState(initialState);
         onClose();
       }
     } else if (mode === 'register') {
-      const { error } = await supabase.auth.signUp({ email: state.email, password: state.password });
+      const { error } = await supabase.auth.signUp({
+        email: state.email,
+        password: state.password,
+        options: {
+          data: { displayName: state.displayName }
+        }
+      });
       if (error) {
         let errorMsg = error.message;
-        if (error.status === 429) errorMsg = 'Příliš mnoho pokusů o registraci. Zkuste to za pár minut znovu.';
-        if (error.status === 422) errorMsg = 'Registrace se nezdařila. Email už existuje, nebo nesplňuje požadavky.';
+        if (error.status === 429) errorMsg = t('auth.errorRegister429');
+        if (error.status === 422) errorMsg = t('auth.errorRegister422');
         setState({ ...state, error: errorMsg, loading: false });
       } else {
-        setState({ ...initialState, info: 'Registrace úspěšná! Zkontrolujte email pro potvrzení.' });
+        setState({ ...initialState, info: t('auth.infoRegister') });
       }
     } else if (mode === 'reset') {
       const { error } = await supabase.auth.resetPasswordForEmail(state.email);
       if (error) {
         let errorMsg = error.message;
-        if (error.status === 429) errorMsg = 'Příliš mnoho pokusů. Zkuste to za chvíli znovu.';
+        if (error.status === 429) errorMsg = t('auth.errorReset429');
         setState({ ...state, error: errorMsg, loading: false });
       } else {
-        setState({ ...initialState, info: 'Na email byl odeslán odkaz pro změnu hesla.' });
+        setState({ ...initialState, info: t('auth.infoReset') });
       }
     }
     setState(s => ({ ...s, loading: false }));
@@ -87,14 +99,14 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
       <form
         className="bg-zinc-900 rounded shadow-lg p-6 w-full max-w-xs flex flex-col gap-3 border border-zinc-700"
         onSubmit={handleSubmit}
-        aria-label={mode === 'login' ? 'Přihlášení' : mode === 'register' ? 'Registrace' : 'Obnova hesla'}
+        aria-label={mode === 'login' ? t('auth.login') : mode === 'register' ? t('auth.register') : t('auth.reset')}
       >
         <h2 className="text-lg font-semibold mb-2 text-white text-center">
-          {mode === 'login' && 'Přihlášení'}
-          {mode === 'register' && 'Registrace'}
-          {mode === 'reset' && 'Obnova hesla'}
+          {mode === 'login' && t('auth.login')}
+          {mode === 'register' && t('auth.register')}
+          {mode === 'reset' && t('auth.reset')}
         </h2>
-        <label htmlFor="email" className="text-sm text-zinc-200">Email</label>
+        <label htmlFor="email" className="text-sm text-zinc-200">{t('auth.email')}</label>
         <input
           id="email"
           name="email"
@@ -106,10 +118,27 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           required
           autoComplete="email"
           aria-required="true"
-          aria-label="Email"
+          aria-label={t('auth.email')}
         />
+        {mode === 'register' && (
+          <>
+            <label htmlFor="displayName" className="text-sm text-zinc-200">{t('auth.name')}</label>
+            <input
+              id="displayName"
+              name="displayName"
+              type="text"
+              className="border rounded px-2 py-1 bg-zinc-800 text-white"
+              value={state.displayName}
+              onChange={handleChange}
+              required
+              autoComplete="name"
+              aria-required="true"
+              aria-label={t('auth.name')}
+            />
+          </>
+        )}
         {mode !== 'reset' && <>
-          <label htmlFor="password" className="text-sm text-zinc-200">Heslo</label>
+          <label htmlFor="password" className="text-sm text-zinc-200">{t('auth.password')}</label>
           <input
             id="password"
             name="password"
@@ -120,7 +149,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             required
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             aria-required="true"
-            aria-label="Heslo"
+            aria-label={t('auth.password')}
           />
         </>}
         {state.error && <div className="text-red-500 text-xs" role="alert">{state.error}</div>}
@@ -129,36 +158,36 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           <button
             type="submit"
             className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 disabled:opacity-60"
-            aria-label={mode === 'login' ? 'Přihlásit se' : mode === 'register' ? 'Registrovat se' : 'Obnovit heslo'}
+            aria-label={mode === 'login' ? t('auth.login') : mode === 'register' ? t('auth.register') : t('auth.reset')}
             disabled={state.loading}
           >
-            {mode === 'login' && 'Přihlásit se'}
-            {mode === 'register' && 'Registrovat se'}
-            {mode === 'reset' && 'Obnovit heslo'}
+            {mode === 'login' && t('auth.login')}
+            {mode === 'register' && t('auth.register')}
+            {mode === 'reset' && t('auth.reset')}
           </button>
           <button
             type="button"
             className="text-zinc-400 px-4 py-1 rounded hover:underline"
             onClick={onClose}
-            aria-label="Zavřít"
+            aria-label={t('auth.close')}
           >
-            Zavřít
+            {t('auth.close')}
           </button>
         </div>
         <div className="flex flex-col gap-1 mt-2 text-xs text-center">
           {mode !== 'login' && (
             <button type="button" className="text-blue-400 hover:underline" onClick={() => handleSwitch('login')}>
-              Máte účet? Přihlásit se
+              {t('auth.switchToLogin')}
             </button>
           )}
           {mode !== 'register' && (
             <button type="button" className="text-blue-400 hover:underline" onClick={() => handleSwitch('register')}>
-              Nemáte účet? Registrovat se
+              {t('auth.switchToRegister')}
             </button>
           )}
           {mode !== 'reset' && (
             <button type="button" className="text-blue-400 hover:underline" onClick={() => handleSwitch('reset')}>
-              Zapomněli jste heslo?
+              {t('auth.switchToReset')}
             </button>
           )}
         </div>

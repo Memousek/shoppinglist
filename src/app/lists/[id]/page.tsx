@@ -63,12 +63,26 @@ export default function ListDetailPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
 
-  // View Transition API hook
+  // View Transition API hook s animací scale-in
   const mainRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!mainRef.current) return;
     if ('startViewTransition' in document) {
-      document.startViewTransition(() => {});
+      document.startViewTransition(() => {
+        if (mainRef.current) {
+          mainRef.current.classList.remove('animate-scale-in');
+          // Force reflow pro restart animace
+          void mainRef.current.offsetWidth;
+          mainRef.current.classList.add('animate-scale-in');
+        }
+      });
+    } else {
+      // fallback: prostě přidej animaci
+      if (mainRef.current) {
+        mainRef.current.classList.remove('animate-scale-in');
+        void mainRef.current.offsetWidth;
+        mainRef.current.classList.add('animate-scale-in');
+      }
     }
   }, [id]);
 

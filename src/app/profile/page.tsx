@@ -13,6 +13,8 @@ import { showSuccess, showError, showInfo } from '../components/toast';
 
 export default function ProfilePage() {
   const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,11 +26,31 @@ export default function ProfilePage() {
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) setEmail(data.session.user.email ?? '');
-      else router.push('/');
+      if (data.session) {
+        setEmail(data.session.user.email ?? '');
+        setDisplayName(data.session.user.user_metadata?.displayName || '');
+        setNewDisplayName(data.session.user.user_metadata?.displayName || '');
+      } else router.push('/');
     };
     getSession();
   }, [router]);
+
+  const handleChangeDisplayName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setInfo('');
+    if (!newDisplayName.trim()) {
+      setError('Zadejte jméno.');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ data: { displayName: newDisplayName } });
+    setLoading(false);
+    if (error) setError(error.message);
+    else {
+      setDisplayName(newDisplayName);
+      showSuccess('Jméno bylo změněno.');
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +89,26 @@ export default function ProfilePage() {
     <main className="max-w-md mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold mb-6">Nastavení účtu</h1>
       <div className="mb-6 p-4 bg-zinc-900 rounded border border-zinc-700">
+        <div className="text-sm text-zinc-400 mb-1">Jméno:</div>
+        <div className="font-mono text-blue-300 text-lg mb-2">{displayName || <span className="italic text-zinc-500">(nenastaveno)</span>}</div>
+        <form onSubmit={handleChangeDisplayName} className="flex gap-2 items-center mb-2">
+          <input
+            type="text"
+            className="border rounded px-2 py-1 bg-zinc-800 text-white"
+            value={newDisplayName}
+            onChange={e => setNewDisplayName(e.target.value)}
+            placeholder="Změnit jméno"
+            required
+            aria-label="Jméno"
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? <Spinner size={18} /> : 'Uložit'}
+          </button>
+        </form>
         <div className="text-sm text-zinc-400 mb-1">Přihlášený email:</div>
         <div className="font-mono text-blue-300 text-lg">{email}</div>
       </div>

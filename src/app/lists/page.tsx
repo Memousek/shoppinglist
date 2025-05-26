@@ -10,6 +10,7 @@ import { supabase } from '@/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import SkeletonList from '../components/skeletonList';
 import { showSuccess, showError } from '../components/toast';
+import { t } from '../i18n';
 
 type ShoppingList = {
   id: string;
@@ -95,14 +96,14 @@ export default function ListsPage() {
   };
 
   return (
-    <main className="max-w-xl mx-auto py-8 px-4" aria-label="Přehled nákupních seznamů">
+    <main className="max-w-xl mx-auto py-8 px-4" aria-label={t('lists.title')}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Moje nákupní seznamy</h2>
+        <h2 className="text-2xl font-bold">{t('lists.title')}</h2>
       </div>
       <div className="flex gap-2 mb-4">
         <input
           className="border rounded px-2 py-1 flex-1"
-          placeholder="Název nového seznamu"
+          placeholder={t('lists.add') + '...'}
           value={newListName}
           onChange={e => setNewListName(e.target.value)}
         />
@@ -110,7 +111,7 @@ export default function ListsPage() {
           className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
           onClick={handleAddList}
         >
-          Přidat
+          {t('lists.add')}
         </button>
       </div>
       {loading ? (
@@ -118,8 +119,8 @@ export default function ListsPage() {
       ) : lists.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
           <span className="text-5xl mb-2">📝</span>
-          <span className="mb-1">Nemáte žádné seznamy.</span>
-          <span className="text-xs text-zinc-500">Vytvořte první seznam pomocí pole nahoře.</span>
+          <span className="mb-1">{t('lists.empty')}</span>
+          <span className="text-xs text-zinc-500">{t('lists.emptyTip')}</span>
         </div>
       ) : (
         <ul className="space-y-2">

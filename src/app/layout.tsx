@@ -28,7 +28,9 @@ export default function RootLayout({
     <html lang="cs">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <CustomToaster />
-        <Navbar />
+        <div className="min-h-12">
+          <Navbar />
+        </div>
         {children}
       </body>
     </html>
