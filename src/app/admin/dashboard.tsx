@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleResetPassword = async (email: string) => {
+  const handleResetPassword = async () => {
     // Supabase nemá přímo admin reset, ale lze vygenerovat odkaz přes Auth API nebo poslat email uživateli
     showInfo('Pro reset hesla použijte funkci "Zapomenuté heslo" na přihlašovací stránce.');
   };
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
                 <td className="p-2">{u.createdAt ? new Date(u.createdAt).toLocaleString() : ''}</td>
                 <td className="p-2 flex gap-2">
                   <button className="text-xs text-red-500 hover:underline" onClick={() => handleDeleteUser(u.id, u.email)}>Smazat</button>
-                  <button className="text-xs text-blue-500 hover:underline" onClick={() => handleResetPassword(u.email)}>Reset hesla</button>
+                  <button className="text-xs text-blue-500 hover:underline" onClick={handleResetPassword}>Reset hesla</button>
                   <button className="text-xs text-yellow-500 hover:underline" onClick={() => handleChangeRole(u.id, u.email)}>Změnit roli</button>
                 </td>
               </tr>
