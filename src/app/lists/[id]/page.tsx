@@ -13,6 +13,7 @@ import type { Session } from '@supabase/supabase-js';
 import SkeletonListHeader from '../../components/skeletonListHeader';
 import SkeletonItems from '../../components/skeletonItems';
 import Spinner from '../../components/spinner';
+import { t } from '../../i18n';
 
 type Item = {
   id: string;
@@ -137,7 +138,7 @@ export default function ListDetailPage() {
         // Pokud změnu provedl někdo jiný, zobraz toast
         const newItem = payload.new as { added_by_email?: string };
         if (newItem && newItem.added_by_email && newItem.added_by_email !== session.user.email) {
-          showInfo('Seznam byl aktualizován jiným uživatelem');
+          showInfo(t('list.updatedByOther'));
         }
       })
       .subscribe();
@@ -154,7 +155,7 @@ export default function ListDetailPage() {
         // Pokud změnu provedl někdo jiný, zobraz toast
         const newList = payload.new as { updated_by_email?: string };
         if (newList && newList.updated_by_email && newList.updated_by_email !== session.user.email) {
-          showInfo('Seznam byl upraven jiným uživatelem');
+          showInfo(t('list.updatedByOther'));
         }
       })
       .subscribe();
@@ -196,7 +197,7 @@ export default function ListDetailPage() {
       .select();
     if (!error && data) {
       setItems([...items, data[0]]);
-      showSuccess(`Přidáno: ${data[0].name}`);
+      showSuccess(t('list.itemAdded').replace('{name}', data[0].name));
       await updateListTimestamp();
     }
     setNewItem('');
@@ -218,7 +219,7 @@ export default function ListDetailPage() {
       .delete()
       .eq('id', itemId);
     setItems(items => items.filter(i => i.id !== itemId));
-    showInfo('Položka smazána');
+    showInfo(t('list.itemDeleted'));
     await updateListTimestamp();
   };
 
@@ -228,6 +229,7 @@ export default function ListDetailPage() {
       .update({ note: listNote })
       .eq('id', id);
     setEditingNote(false);
+    showInfo(t('list.noteSaved'));
   };
 
   const handleShare = async () => {
@@ -262,12 +264,13 @@ export default function ListDetailPage() {
       .eq('id', itemId);
     setItems(items => items.map(i => i.id === itemId ? { ...i, name: editItemName, note: editItemNote } : i));
     setEditingItemId(null);
-    showInfo('Položka upravena');
+    showInfo(t('list.itemEdited'));
     await updateListTimestamp();
   };
 
   const handleCancelEditItem = () => {
     setEditingItemId(null);
+    showInfo(t('list.itemEdited'));
   };
 
   // Funkce pro změnu role uživatele (pouze owner)
@@ -282,7 +285,7 @@ export default function ListDetailPage() {
       .select('*')
       .eq('list_id', id);
     setShares(sharesData || []);
-    showInfo('Role uživatele změněna');
+    showInfo(t('list.roleChanged'));
   };
 
   const handleRemoveUser = async (shareId: string) => {
@@ -296,7 +299,7 @@ export default function ListDetailPage() {
       .select('*')
       .eq('list_id', id);
     setShares(sharesData || []);
-    showInfo('Uživatel odebrán');
+    showInfo(t('list.userRemoved'));
   };
 
   if (loading) return (
@@ -305,7 +308,7 @@ export default function ListDetailPage() {
       <SkeletonItems />
     </main>
   );
-  if (!list) return <main className="p-8">Seznam nenalezen.</main>;
+  if (!list) return <main className="p-8">{t('list.notFound')}</main>;
 
   return (
     <main ref={mainRef} className="max-w-xl mx-auto py-8 px-4" aria-label="Detail nákupního seznamu">
@@ -318,7 +321,7 @@ export default function ListDetailPage() {
             className="mb-4 text-blue-500 hover:underline text-sm"
             onClick={() => router.push('/lists')}
           >
-            ← Zpět na seznamy
+            ← {t('list.back')}
           </button>
           <h2 className="text-2xl font-bold mb-2">{list.name}</h2>
           <div className="mb-4">
@@ -328,54 +331,54 @@ export default function ListDetailPage() {
                   className="border rounded px-2 py-1 flex-1"
                   value={listNote}
                   onChange={e => setListNote(e.target.value)}
-                  placeholder="Poznámka k seznamu"
+                  placeholder={t('list.notePlaceholder')}
                 />
                 <button
                   className="bg-blue-600 text-white px-3 py-1 rounded"
                   onClick={handleUpdateListNote}
                   disabled={loading}
                 >
-                  {loading ? <Spinner size={18} /> : 'Uložit'}
+                  {loading ? <Spinner size={18} /> : t('list.save')}
                 </button>
-                <button className="text-gray-500 px-2" onClick={() => setEditingNote(false)}>Zrušit</button>
+                <button className="text-gray-500 px-2" onClick={() => setEditingNote(false)}>{t('list.cancel')}</button>
               </div>
             ) : (
               <div className="flex gap-2 items-center">
-                <span className="text-gray-700 text-sm">{list.note || <span className="italic text-gray-400">Bez poznámky</span>}</span>
-                <button className="text-xs text-blue-600 hover:underline" onClick={() => setEditingNote(true)}>Upravit</button>
+                <span className="text-gray-700 text-sm">{list.note || <span className="italic text-gray-400">{t('list.noNote')}</span>}</span>
+                <button className="text-xs text-blue-600 hover:underline" onClick={() => setEditingNote(true)}>{t('list.edit')}</button>
               </div>
             )}
           </div>
           <div className="mb-2 text-xs text-gray-500" aria-live="polite">
-            Vaše role: <span className="font-semibold">{myRole}</span>
+            {t('list.role')} <span className="font-semibold">{myRole}</span>
           </div>
           <div className="flex gap-2 mb-4">
             {(myRole === 'editor' || myRole === 'owner') && (
               <input
                 className="border rounded px-2 py-1 flex-1"
-                placeholder="Název položky"
+                placeholder={t('list.itemNamePlaceholder')}
                 value={newItem}
                 onChange={e => setNewItem(e.target.value)}
-                aria-label="Název položky"
+                aria-label={t('list.itemNamePlaceholder')}
               />
             )}
             {(myRole === 'editor' || myRole === 'owner') && (
               <input
                 className="border rounded px-2 py-1 flex-1"
-                placeholder="Poznámka"
+                placeholder={t('list.itemNotePlaceholder')}
                 value={newNote}
                 onChange={e => setNewNote(e.target.value)}
-                aria-label="Poznámka"
+                aria-label={t('list.itemNotePlaceholder')}
               />
             )}
             {(myRole === 'editor' || myRole === 'owner') && (
               <button
                 className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 focus:outline focus:ring"
                 onClick={handleAddItem}
-                aria-label="Přidat položku"
+                aria-label={t('list.addItemAria')}
                 disabled={loading}
               >
-                {loading ? <Spinner size={18} /> : 'Přidat'}
+                {loading ? <Spinner size={18} /> : t('list.add')}
               </button>
             )}
           </div>
@@ -384,9 +387,9 @@ export default function ListDetailPage() {
               <button
                 className="text-sm text-blue-600 hover:underline"
                 onClick={handleShare}
-                aria-label="Sdílet seznam"
+                aria-label={t('list.share')}
               >
-                Sdílet seznam
+                {t('list.share')}
               </button>
             </div>
           )}
@@ -396,8 +399,8 @@ export default function ListDetailPage() {
         {items.length === 0 ? (
           <li className="flex flex-col items-center justify-center py-8 text-zinc-400">
             <span className="text-5xl mb-2">🛒</span>
-            <span className="mb-1">Seznam je prázdný.</span>
-            <span className="text-xs text-zinc-500">Přidejte první položku pomocí pole nahoře.</span>
+            <span className="mb-1">{t('list.empty')}</span>
+            <span className="text-xs text-zinc-500">{t('list.emptyTip')}</span>
           </li>
         ) : (
           items.map(item => (
@@ -406,7 +409,7 @@ export default function ListDetailPage() {
                 type="checkbox"
                 checked={item.checked}
                 onChange={() => (myRole === 'editor' || myRole === 'owner') ? handleCheckItem(item.id, item.checked) : undefined}
-                aria-label="Označit jako koupené"
+                aria-label={t('list.checkAria')}
                 disabled={myRole === 'viewer'}
               />
               {editingItemId === item.id ? (
@@ -420,25 +423,25 @@ export default function ListDetailPage() {
                     className="border rounded px-2 py-1 flex-1"
                     value={editItemNote}
                     onChange={e => setEditItemNote(e.target.value)}
-                    placeholder="Poznámka"
+                    placeholder={t('list.itemNotePlaceholder')}
                   />
-                  <button className="text-xs text-green-600 hover:underline" onClick={() => handleSaveEditItem(item.id)}>Uložit</button>
-                  <button className="text-xs text-gray-600 hover:underline" onClick={handleCancelEditItem}>Zrušit</button>
+                  <button className="text-xs text-green-600 hover:underline" onClick={() => handleSaveEditItem(item.id)}>{t('list.saveItem')}</button>
+                  <button className="text-xs text-gray-600 hover:underline" onClick={handleCancelEditItem}>{t('list.cancelItem')}</button>
                 </>
               ) : (
                 <>
                   <span className={item.checked ? 'line-through text-gray-400' : ''}>{item.name}</span>
                   {item.note && <span className="text-xs text-gray-500 ml-2">({item.note})</span>}
                   {item.added_by_email && (
-                    <span className="text-xs text-gray-400 ml-2">přidal: {item.added_by_email}</span>
+                    <span className="text-xs text-gray-400 ml-2">{t('list.addedBy')} {item.added_by_email}</span>
                   )}
                   {(myRole === 'editor' || myRole === 'owner') && (
                     <button
                       className="text-xs text-blue-600 hover:underline ml-2"
                       onClick={() => handleEditItem(item)}
-                      aria-label={`Upravit položku ${item.name}`}
+                      aria-label={t('list.editItemAria') + ' ' + item.name}
                     >
-                      Upravit
+                      {t('list.editItem')}
                     </button>
                   )}
                 </>
@@ -447,9 +450,9 @@ export default function ListDetailPage() {
                 <button
                   className="ml-auto text-xs text-red-600 hover:underline"
                   onClick={() => handleDeleteItem(item.id)}
-                  aria-label={`Smazat položku ${item.name}`}
+                  aria-label={t('list.deleteItemAria') + ' ' + item.name}
                 >
-                  Smazat
+                  {t('list.deleteItem')}
                 </button>
               )}
             </li>
@@ -458,7 +461,7 @@ export default function ListDetailPage() {
       </ul>
       {myRole === 'owner' && shares.filter(s => s.accepted_email).length > 0 && (
         <section className="mb-6 mt-6">
-          <h3 className="font-semibold mb-2 text-base">Sdíleno s uživateli:</h3>
+          <h3 className="font-semibold mb-2 text-base">{t('list.sharingWith')}</h3>
           <form
             className="flex gap-2 mb-4"
             onSubmit={async e => {
@@ -469,10 +472,10 @@ export default function ListDetailPage() {
                 .from('shopping_list_shares')
                 .insert({ list_id: id, share_token: crypto.randomUUID(), accepted_email: inviteEmail, role: 'viewer' });
               setInviteLoading(false);
-              if (error) showError('Nepodařilo se pozvat uživatele: ' + error.message);
+              if (error) showError(t('list.inviteError').replace('{error}', error.message));
               else {
                 setInviteEmail('');
-                showSuccess('Pozvánka byla odeslána.');
+                showSuccess(t('list.inviteSent'));
                 // Refresh shares
                 const { data: sharesData } = await supabase
                   .from('shopping_list_shares')
@@ -481,12 +484,12 @@ export default function ListDetailPage() {
                 setShares(sharesData || []);
               }
             }}
-            aria-label="Pozvat uživatele emailem"
+            aria-label={t('list.inviteAria')}
           >
             <input
               type="email"
               className="border rounded px-2 py-1 flex-1 bg-zinc-900 text-white"
-              placeholder="Zadejte email pro pozvání"
+              placeholder={t('list.invitePlaceholder')}
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
               required
@@ -496,7 +499,7 @@ export default function ListDetailPage() {
               className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 disabled:opacity-60"
               disabled={inviteLoading}
             >
-              {inviteLoading ? <Spinner size={18} /> : 'Pozvat'}
+              {inviteLoading ? <Spinner size={18} /> : t('list.invite')}
             </button>
           </form>
           <ul className="space-y-2">
@@ -508,7 +511,7 @@ export default function ListDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
                   <span className="truncate font-mono text-sm text-blue-300" title={s.accepted_email || undefined}>{s.accepted_email}</span>
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ml-0 sm:ml-2 ${s.role === 'editor' ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'}`}
-                    aria-label={`Role: ${s.role}`}
+                    aria-label={t('list.changeRoleAria') + ' ' + s.role}
                   >
                     {s.role}
                   </span>
@@ -518,7 +521,7 @@ export default function ListDetailPage() {
                     value={s.role}
                     onChange={e => handleChangeRole(s.id, e.target.value as 'viewer' | 'editor')}
                     className="border border-zinc-700 bg-zinc-800 text-xs rounded px-2 py-1 focus:outline focus:ring focus:border-blue-500"
-                    aria-label={`Změnit roli pro ${s.accepted_email}`}
+                    aria-label={t('list.changeRoleAria') + ' ' + s.accepted_email}
                     disabled={s.role === 'owner'}
                   >
                     <option value="owner">owner</option>
@@ -529,9 +532,9 @@ export default function ListDetailPage() {
                   <button
                     className="text-xs text-red-500 hover:text-red-700 hover:underline px-2 py-1 rounded focus:outline focus:ring"
                     onClick={() => handleRemoveUser(s.id)}
-                    aria-label={`Odebrat uživatele ${s.accepted_email}`}
+                    aria-label={t('list.removeUserAria') + ' ' + s.accepted_email}
                   >
-                    Odebrat
+                    {t('list.removeUser')}
                   </button>
                   )}
                   
@@ -544,7 +547,7 @@ export default function ListDetailPage() {
       {showShare && shareLink && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-zinc-900 rounded shadow-lg p-6 max-w-sm w-full">
-            <h3 className="font-bold mb-2">Sdílejte tento odkaz:</h3>
+            <h3 className="font-bold mb-2">{t('list.shareLinkTitle')}</h3>
             <input
               className="w-full border rounded px-2 py-1 mb-2"
               value={shareLink}
@@ -555,20 +558,20 @@ export default function ListDetailPage() {
               className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 mr-2"
               onClick={() => {navigator.clipboard.writeText(shareLink!)}}
             >
-              Kopírovat odkaz
+              {t('list.copyLink')}
             </button>
             <button
               className="text-gray-600 px-4 py-1 rounded hover:underline"
               onClick={() => setShowShare(false)}
             >
-              Zavřít
+              {t('list.close')}
             </button>
           </div>
         </div>
       )}
       {list?.updated_at && list?.updated_by_email && (
         <div className="mt-8 text-xs text-gray-500" aria-live="polite">
-          Poslední update v {new Date(list.updated_at).toLocaleString()} od {list.updated_by_email}
+          {t('list.lastUpdate').replace('{date}', new Date(list.updated_at).toLocaleString()).replace('{user}', list.updated_by_email)}
         </div>
       )}
     </main>
