@@ -505,10 +505,13 @@ export default function ListDetailPage() {
                     onChange={e => handleChangeRole(s.id, e.target.value as 'viewer' | 'editor')}
                     className="border border-zinc-700 bg-zinc-800 text-xs rounded px-2 py-1 focus:outline focus:ring focus:border-blue-500"
                     aria-label={`Změnit roli pro ${s.accepted_email}`}
+                    disabled={s.role === 'owner'}
                   >
+                    <option value="owner">owner</option>
                     <option value="viewer">viewer</option>
                     <option value="editor">editor</option>
                   </select>
+                  {s.role !== 'owner' && (
                   <button
                     className="text-xs text-red-500 hover:text-red-700 hover:underline px-2 py-1 rounded focus:outline focus:ring"
                     onClick={() => handleRemoveUser(s.id)}
@@ -516,6 +519,8 @@ export default function ListDetailPage() {
                   >
                     Odebrat
                   </button>
+                  )}
+                  
                 </div>
               </li>
             ))}
