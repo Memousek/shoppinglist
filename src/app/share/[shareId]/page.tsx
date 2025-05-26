@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
+import { Metadata } from 'next';
 
 type List = {
   id: string;
@@ -20,6 +21,15 @@ type Item = {
   note: string | null;
   checked: boolean;
 };
+
+export async function generateMetadata({ params }: { params: { shareId: string } }): Promise<Metadata> {
+  // Dynamicky načti název seznamu pro title
+  // (V produkci použij fetch z API, zde pouze fallback)
+  return {
+    title: `Sdílený seznam – Shopping List`,
+    description: 'Zobrazte a přidejte si sdílený nákupní seznam do svých seznamů.',
+  };
+}
 
 export default function SharePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -83,7 +93,7 @@ export default function SharePage() {
   if (!list) return <main className="p-8">Sdílený seznam nenalezen.</main>;
 
   return (
-    <main className="max-w-xl mx-auto py-8 px-4">
+    <main className="max-w-xl mx-auto py-8 px-4" aria-label="Sdílený nákupní seznam">
       <h2 className="text-2xl font-bold mb-2">{list.name}</h2>
       <div className="mb-4 text-gray-700 text-sm">{list.note}</div>
       <ul className="space-y-2 mb-6">

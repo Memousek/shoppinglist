@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
+import SkeletonList from '../components/skeletonList';
+import { showSuccess, showError, showInfo } from '../components/toast';
 
 type ShoppingList = {
   id: string;
@@ -64,8 +66,16 @@ export default function ListsPage() {
       if (!session) router.push('/');
       else getSessionAndLists();
     });
+    // Realtime listener na shopping_lists
+    const channel = supabase
+      .channel('lists-overview')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_lists' }, () => {
+        getSessionAndLists();
+      })
+      .subscribe();
     return () => {
       listener.subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [router]);
 
@@ -77,21 +87,17 @@ export default function ListsPage() {
       .select();
     if (!error && data && data[0]) {
       setNewListName('');
+      showSuccess('Seznam byl přidán');
       router.push(`/lists/${data[0].id}`);
       return;
     }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+    if (error) showError(error.message);
   };
 
   return (
-    <main className="max-w-xl mx-auto py-8 px-4">
+    <main className="max-w-xl mx-auto py-8 px-4" aria-label="Přehled nákupních seznamů">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Moje nákupní seznamy</h2>
-        <button onClick={handleSignOut} className="text-sm text-red-600 hover:underline">Odhlásit se</button>
       </div>
       <div className="flex gap-2 mb-4">
         <input
@@ -108,15 +114,19 @@ export default function ListsPage() {
         </button>
       </div>
       {loading ? (
-        <p>Načítám...</p>
+        <SkeletonList />
       ) : lists.length === 0 ? (
-        <p>Nemáte žádné seznamy.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
+          <span className="text-5xl mb-2">📝</span>
+          <span className="mb-1">Nemáte žádné seznamy.</span>
+          <span className="text-xs text-zinc-500">Vytvořte první seznam pomocí pole nahoře.</span>
+        </div>
       ) : (
         <ul className="space-y-2">
           {lists.map(list => (
             <li
               key={list.id}
-              className="border rounded px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              className="border rounded px-3 py-2 hover:bg-gray-700 cursor-pointer"
               onClick={() => router.push(`/lists/${list.id}`)}
             >
               <div className="font-semibold">{list.name}</div>

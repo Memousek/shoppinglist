@@ -5,11 +5,14 @@
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
-import toast from 'react-hot-toast';
+import { showSuccess, showError, showInfo } from '../../components/toast';
 import type { Session } from '@supabase/supabase-js';
+import SkeletonListHeader from '../../components/skeletonListHeader';
+import SkeletonItems from '../../components/skeletonItems';
+import Spinner from '../../components/spinner';
 
 type Item = {
   id: string;
@@ -57,6 +60,18 @@ export default function ListDetailPage() {
   const [editItemName, setEditItemName] = useState('');
   const [editItemNote, setEditItemNote] = useState('');
   const [myRole, setMyRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  // View Transition API hook
+  const mainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mainRef.current) return;
+    if ('startViewTransition' in document) {
+      // @ts-ignore
+      document.startViewTransition(() => {});
+    }
+  }, [id]);
 
   useEffect(() => {
     const getSessionAndList = async () => {
@@ -109,7 +124,7 @@ export default function ListDetailPage() {
         // Pokud změnu provedl někdo jiný, zobraz toast
         const newItem = payload.new as { added_by_email?: string };
         if (newItem && newItem.added_by_email && newItem.added_by_email !== session.user.email) {
-          toast('Seznam byl aktualizován jiným uživatelem', { icon: '🔄' });
+          showInfo('Seznam byl aktualizován jiným uživatelem');
         }
       })
       .subscribe();
@@ -126,7 +141,7 @@ export default function ListDetailPage() {
         // Pokud změnu provedl někdo jiný, zobraz toast
         const newList = payload.new as { updated_by_email?: string };
         if (newList && newList.updated_by_email && newList.updated_by_email !== session.user.email) {
-          toast('Seznam byl upraven jiným uživatelem', { icon: '🔄' });
+          showInfo('Seznam byl upraven jiným uživatelem');
         }
       })
       .subscribe();
@@ -168,7 +183,7 @@ export default function ListDetailPage() {
       .select();
     if (!error && data) {
       setItems([...items, data[0]]);
-      toast.success(`Přidáno: ${data[0].name}`);
+      showSuccess(`Přidáno: ${data[0].name}`);
       await updateListTimestamp();
     }
     setNewItem('');
@@ -190,7 +205,7 @@ export default function ListDetailPage() {
       .delete()
       .eq('id', itemId);
     setItems(items => items.filter(i => i.id !== itemId));
-    toast('Položka smazána', { icon: '🗑️' });
+    showInfo('Položka smazána');
     await updateListTimestamp();
   };
 
@@ -234,7 +249,7 @@ export default function ListDetailPage() {
       .eq('id', itemId);
     setItems(items => items.map(i => i.id === itemId ? { ...i, name: editItemName, note: editItemNote } : i));
     setEditingItemId(null);
-    toast('Položka upravena', { icon: '✏️' });
+    showInfo('Položka upravena');
     await updateListTimestamp();
   };
 
@@ -254,7 +269,7 @@ export default function ListDetailPage() {
       .select('*')
       .eq('list_id', id);
     setShares(sharesData || []);
-    toast.success('Role uživatele změněna');
+    showInfo('Role uživatele změněna');
   };
 
   const handleRemoveUser = async (shareId: string) => {
@@ -268,142 +283,209 @@ export default function ListDetailPage() {
       .select('*')
       .eq('list_id', id);
     setShares(sharesData || []);
-    toast('Uživatel odebrán', { icon: '🚫' });
+    showInfo('Uživatel odebrán');
   };
 
-  if (loading) return <main className="p-8">Načítám...</main>;
+  if (loading) return (
+    <main ref={mainRef} className="max-w-xl mx-auto py-8 px-4">
+      <SkeletonListHeader />
+      <SkeletonItems />
+    </main>
+  );
   if (!list) return <main className="p-8">Seznam nenalezen.</main>;
 
   return (
-    <main className="max-w-xl mx-auto py-8 px-4">
-      <button
-        className="mb-4 text-blue-500 hover:underline text-sm"
-        onClick={() => router.push('/lists')}
-      >
-        ← Zpět na seznamy
-      </button>
-      <h2 className="text-2xl font-bold mb-2">{list.name}</h2>
-      <div className="mb-4">
-        {editingNote ? (
-          <div className="flex gap-2">
-            <input
-              className="border rounded px-2 py-1 flex-1"
-              value={listNote}
-              onChange={e => setListNote(e.target.value)}
-              placeholder="Poznámka k seznamu"
-            />
-            <button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={handleUpdateListNote}>Uložit</button>
-            <button className="text-gray-500 px-2" onClick={() => setEditingNote(false)}>Zrušit</button>
-          </div>
-        ) : (
-          <div className="flex gap-2 items-center">
-            <span className="text-gray-700 text-sm">{list.note || <span className="italic text-gray-400">Bez poznámky</span>}</span>
-            <button className="text-xs text-blue-600 hover:underline" onClick={() => setEditingNote(true)}>Upravit</button>
-          </div>
-        )}
-      </div>
-      <div className="mb-2 text-xs text-gray-500" aria-live="polite">
-        Vaše role: <span className="font-semibold">{myRole}</span>
-      </div>
-      <div className="flex gap-2 mb-4">
-        {(myRole === 'editor' || myRole === 'owner') && (
-          <input
-            className="border rounded px-2 py-1 flex-1"
-            placeholder="Název položky"
-            value={newItem}
-            onChange={e => setNewItem(e.target.value)}
-            aria-label="Název položky"
-          />
-        )}
-        {(myRole === 'editor' || myRole === 'owner') && (
-          <input
-            className="border rounded px-2 py-1 flex-1"
-            placeholder="Poznámka"
-            value={newNote}
-            onChange={e => setNewNote(e.target.value)}
-            aria-label="Poznámka"
-          />
-        )}
-        {(myRole === 'editor' || myRole === 'owner') && (
+    <main ref={mainRef} className="max-w-xl mx-auto py-8 px-4" aria-label="Detail nákupního seznamu">
+      {/* Hlavička je vždy renderovaná, skeleton pouze při loadingu */}
+      {loading ? (
+        <SkeletonListHeader />
+      ) : (
+        <>
           <button
-            className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 focus:outline focus:ring"
-            onClick={handleAddItem}
-            aria-label="Přidat položku"
+            className="mb-4 text-blue-500 hover:underline text-sm"
+            onClick={() => router.push('/lists')}
           >
-            Přidat
+            ← Zpět na seznamy
           </button>
-        )}
-      </div>
-      {myRole === 'owner' && (
-        <div className="flex justify-between items-center mb-4">
-          <button
-            className="text-sm text-blue-600 hover:underline"
-            onClick={handleShare}
-            aria-label="Sdílet seznam"
-          >
-            Sdílet seznam
-          </button>
-        </div>
-      )}
-      <ul className="space-y-2">
-        {items.map(item => (
-          <li key={item.id} className="flex items-center gap-2 border rounded px-3 py-2" role="listitem">
-            <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => (myRole === 'editor' || myRole === 'owner') ? handleCheckItem(item.id, item.checked) : undefined}
-              aria-label="Označit jako koupené"
-              disabled={myRole === 'viewer'}
-            />
-            {editingItemId === item.id ? (
-              <>
+          <h2 className="text-2xl font-bold mb-2">{list.name}</h2>
+          <div className="mb-4">
+            {editingNote ? (
+              <div className="flex gap-2">
                 <input
                   className="border rounded px-2 py-1 flex-1"
-                  value={editItemName}
-                  onChange={e => setEditItemName(e.target.value)}
+                  value={listNote}
+                  onChange={e => setListNote(e.target.value)}
+                  placeholder="Poznámka k seznamu"
                 />
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  value={editItemNote}
-                  onChange={e => setEditItemNote(e.target.value)}
-                  placeholder="Poznámka"
-                />
-                <button className="text-xs text-green-600 hover:underline" onClick={() => handleSaveEditItem(item.id)}>Uložit</button>
-                <button className="text-xs text-gray-600 hover:underline" onClick={handleCancelEditItem}>Zrušit</button>
-              </>
+                <button
+                  className="bg-blue-600 text-white px-3 py-1 rounded"
+                  onClick={handleUpdateListNote}
+                  disabled={loading}
+                >
+                  {loading ? <Spinner size={18} /> : 'Uložit'}
+                </button>
+                <button className="text-gray-500 px-2" onClick={() => setEditingNote(false)}>Zrušit</button>
+              </div>
             ) : (
-              <>
-                <span className={item.checked ? 'line-through text-gray-400' : ''}>{item.name}</span>
-                {item.note && <span className="text-xs text-gray-500 ml-2">({item.note})</span>}
-                {item.added_by_email && (
-                  <span className="text-xs text-gray-400 ml-2">přidal: {item.added_by_email}</span>
-                )}
-                {(myRole === 'editor' || myRole === 'owner') && (
-                  <button
-                    className="text-xs text-blue-600 hover:underline ml-2"
-                    onClick={() => handleEditItem(item)}
-                    aria-label={`Upravit položku ${item.name}`}
-                  >
-                    Upravit
-                  </button>
-                )}
-              </>
+              <div className="flex gap-2 items-center">
+                <span className="text-gray-700 text-sm">{list.note || <span className="italic text-gray-400">Bez poznámky</span>}</span>
+                <button className="text-xs text-blue-600 hover:underline" onClick={() => setEditingNote(true)}>Upravit</button>
+              </div>
+            )}
+          </div>
+          <div className="mb-2 text-xs text-gray-500" aria-live="polite">
+            Vaše role: <span className="font-semibold">{myRole}</span>
+          </div>
+          <div className="flex gap-2 mb-4">
+            {(myRole === 'editor' || myRole === 'owner') && (
+              <input
+                className="border rounded px-2 py-1 flex-1"
+                placeholder="Název položky"
+                value={newItem}
+                onChange={e => setNewItem(e.target.value)}
+                aria-label="Název položky"
+              />
+            )}
+            {(myRole === 'editor' || myRole === 'owner') && (
+              <input
+                className="border rounded px-2 py-1 flex-1"
+                placeholder="Poznámka"
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                aria-label="Poznámka"
+              />
             )}
             {(myRole === 'editor' || myRole === 'owner') && (
               <button
-                className="ml-auto text-xs text-red-600 hover:underline"
-                onClick={() => handleDeleteItem(item.id)}
-                aria-label={`Smazat položku ${item.name}`}
+                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 focus:outline focus:ring"
+                onClick={handleAddItem}
+                aria-label="Přidat položku"
+                disabled={loading}
               >
-                Smazat
+                {loading ? <Spinner size={18} /> : 'Přidat'}
               </button>
             )}
+          </div>
+          {myRole === 'owner' && (
+            <div className="flex justify-between items-center mb-4">
+              <button
+                className="text-sm text-blue-600 hover:underline"
+                onClick={handleShare}
+                aria-label="Sdílet seznam"
+              >
+                Sdílet seznam
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      <ul className="space-y-2">
+        {items.length === 0 ? (
+          <li className="flex flex-col items-center justify-center py-8 text-zinc-400">
+            <span className="text-5xl mb-2">🛒</span>
+            <span className="mb-1">Seznam je prázdný.</span>
+            <span className="text-xs text-zinc-500">Přidejte první položku pomocí pole nahoře.</span>
           </li>
-        ))}
+        ) : (
+          items.map(item => (
+            <li key={item.id} className="flex items-center gap-2 border rounded px-3 py-2 transition-all duration-200 animate-fade-in" role="listitem">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => (myRole === 'editor' || myRole === 'owner') ? handleCheckItem(item.id, item.checked) : undefined}
+                aria-label="Označit jako koupené"
+                disabled={myRole === 'viewer'}
+              />
+              {editingItemId === item.id ? (
+                <>
+                  <input
+                    className="border rounded px-2 py-1 flex-1"
+                    value={editItemName}
+                    onChange={e => setEditItemName(e.target.value)}
+                  />
+                  <input
+                    className="border rounded px-2 py-1 flex-1"
+                    value={editItemNote}
+                    onChange={e => setEditItemNote(e.target.value)}
+                    placeholder="Poznámka"
+                  />
+                  <button className="text-xs text-green-600 hover:underline" onClick={() => handleSaveEditItem(item.id)}>Uložit</button>
+                  <button className="text-xs text-gray-600 hover:underline" onClick={handleCancelEditItem}>Zrušit</button>
+                </>
+              ) : (
+                <>
+                  <span className={item.checked ? 'line-through text-gray-400' : ''}>{item.name}</span>
+                  {item.note && <span className="text-xs text-gray-500 ml-2">({item.note})</span>}
+                  {item.added_by_email && (
+                    <span className="text-xs text-gray-400 ml-2">přidal: {item.added_by_email}</span>
+                  )}
+                  {(myRole === 'editor' || myRole === 'owner') && (
+                    <button
+                      className="text-xs text-blue-600 hover:underline ml-2"
+                      onClick={() => handleEditItem(item)}
+                      aria-label={`Upravit položku ${item.name}`}
+                    >
+                      Upravit
+                    </button>
+                  )}
+                </>
+              )}
+              {(myRole === 'editor' || myRole === 'owner') && (
+                <button
+                  className="ml-auto text-xs text-red-600 hover:underline"
+                  onClick={() => handleDeleteItem(item.id)}
+                  aria-label={`Smazat položku ${item.name}`}
+                >
+                  Smazat
+                </button>
+              )}
+            </li>
+          ))
+        )}
       </ul>
       {myRole === 'owner' && shares.filter(s => s.accepted_email).length > 0 && (
         <section className="mb-6 mt-6">
           <h3 className="font-semibold mb-2 text-base">Sdíleno s uživateli:</h3>
+          <form
+            className="flex gap-2 mb-4"
+            onSubmit={async e => {
+              e.preventDefault();
+              if (!inviteEmail) return;
+              setInviteLoading(true);
+              const { error } = await supabase
+                .from('shopping_list_shares')
+                .insert({ list_id: id, share_token: crypto.randomUUID(), accepted_email: inviteEmail, role: 'viewer' });
+              setInviteLoading(false);
+              if (error) showError('Nepodařilo se pozvat uživatele: ' + error.message);
+              else {
+                setInviteEmail('');
+                showSuccess('Pozvánka byla odeslána.');
+                // Refresh shares
+                const { data: sharesData } = await supabase
+                  .from('shopping_list_shares')
+                  .select('*')
+                  .eq('list_id', id);
+                setShares(sharesData || []);
+              }
+            }}
+            aria-label="Pozvat uživatele emailem"
+          >
+            <input
+              type="email"
+              className="border rounded px-2 py-1 flex-1 bg-zinc-900 text-white"
+              placeholder="Zadejte email pro pozvání"
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 disabled:opacity-60"
+              disabled={inviteLoading}
+            >
+              {inviteLoading ? <Spinner size={18} /> : 'Pozvat'}
+            </button>
+          </form>
           <ul className="space-y-2">
             {shares.filter(s => s.accepted_email).map(s => (
               <li
@@ -443,7 +525,7 @@ export default function ListDetailPage() {
       )}
       {showShare && shareLink && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full">
+          <div className="bg-zinc-900 rounded shadow-lg p-6 max-w-sm w-full">
             <h3 className="font-bold mb-2">Sdílejte tento odkaz:</h3>
             <input
               className="w-full border rounded px-2 py-1 mb-2"
