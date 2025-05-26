@@ -70,5 +70,6 @@
   "list.inviteSent": "Invitation sent.",
   "list.inviteError": "Failed to invite user: {error}",
   "list.notFound": "List not found.",
-  "list.updatedByOther": "The list was updated by another user."
+  "list.updatedByOther": "The list was updated by another user.",
+  "list.noteSaved": "Note has been saved."
 } 

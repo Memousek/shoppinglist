@@ -70,5 +70,6 @@
   "list.inviteSent": "Pozvánka byla odeslána.",
   "list.inviteError": "Nepodařilo se pozvat uživatele: {error}",
   "list.notFound": "Seznam nenalezen.",
-  "list.updatedByOther": "Seznam byl aktualizován jiným uživatelem."
+  "list.updatedByOther": "Seznam byl aktualizován jiným uživatelem.",
+  "list.noteSaved": "Poznámka byla uložena."
 } 
