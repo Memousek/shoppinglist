@@ -42,9 +42,10 @@ export default function HomePage() {
     <main className="flex flex-col items-center justify-center min-h-screen gap-4" aria-label="Přihlašovací stránka">
       <h1 className="text-3xl font-bold">Shopping List</h1>
       <button
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={handleSignInWithGoogle}
         aria-label="Přihlásit se přes Google"
+        disabled={true}
       >
         Přihlásit se přes Google
       </button>
