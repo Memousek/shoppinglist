@@ -4,7 +4,9 @@
 import cs from '../locales/cs.json';
 import en from '../locales/en.json';
 
-const locales = { cs, en };
+type TranslationKeys = keyof typeof cs;
+type Locale = Record<TranslationKeys, string>;
+const locales: Record<'cs' | 'en', Locale> = { cs, en };
 
 function getLangFromCookie(): string {
   if (typeof document !== 'undefined') {
@@ -20,7 +22,7 @@ function getLangFromCookie(): string {
   return 'cs';
 }
 
-export function t(key: string): string {
+export function t(key: TranslationKeys): string {
   const lang = getLangFromCookie();
-  return (locales[lang as 'cs' | 'en'] as any)?.[key] || key;
+  return locales[lang as 'cs' | 'en']?.[key] || key;
 } 

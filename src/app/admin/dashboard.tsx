@@ -47,9 +47,15 @@ export default function AdminDashboard() {
   }, [isAdmin]);
 
   const fetchUsers = async () => {
+    type RawUser = {
+      id: string;
+      email: string;
+      raw_user_meta_data?: { displayName?: string; role?: string };
+      created_at?: string;
+    };
     const { data, error } = await supabase.rpc('get_all_users_with_metadata');
     if (!error && data) {
-      setUsers(data.map((u: any) => ({
+      setUsers((data as RawUser[]).map((u) => ({
         id: u.id,
         email: u.email,
         displayName: u.raw_user_meta_data?.displayName,
