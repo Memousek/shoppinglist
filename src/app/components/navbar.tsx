@@ -81,7 +81,7 @@ export default function Navbar() {
         {user.role === 'admin' && (
           <button
             className="ml-4 text-sm font-semibold text-red-400 hover:underline border border-red-400 rounded px-2 py-1"
-            onClick={() => router.push('/admin/dashboard')}
+            onClick={() => router.push('/admin/')}
             aria-label="Admin dashboard"
           >
             Admin
